@@ -1,0 +1,72 @@
+name: Release
+
+on:
+  workflow_call:
+    inputs:
+      runs-on:
+        description: 'The runner that the job will run on'
+        required: false
+        type: string
+      #github-artifact-name:
+      #  description: 'The artifact name to download'
+      #  required: false
+      #  type: string
+      #github-artifact-path:
+      #  description: 'The path where the artifact will be downloaded'
+      #  required: false
+      #  type: string
+      tag:
+        description: 'The tag to create for the release'
+        required: false
+        type: string
+      tag_major:
+        description: 'The major version of the tag'
+        required: false
+        type: string
+      tag_minor:
+        description: 'The minor version of the tag'
+        required: false
+        type: string
+
+permissions: write-all
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-github-action-release
+  cancel-in-progress: true
+
+jobs:
+  dist-tag:
+    runs-on: wex-sandbox
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set Git Identity
+        run: |
+          git config --global user.name "Github Actions"
+          git config --global user.email "no-reply@wexinc.com"
+
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+      - name: Make all executable
+        run: |-
+          chmod +x dist/*
+
+      - name: Add dist to Release
+        run: |-
+          git add -f dist
+          git tag -a -m "Release ${TAG}" "${TAG}"
+          git push origin "$TAG"
+  
+  release-github:
+      uses: ./.github/workflows/release-workflow.yml
+      needs: release
+      secrets: inherit
+      with:
+        runs-on: wex-sandbox
+        tag: ${{ needs.release.outputs.tag }}
+        tag_major: ${{ needs.release.outputs.tag_major }}
+        tag_minor: ${{ needs.release.outputs.tag_minor }}
