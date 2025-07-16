@@ -63,10 +63,10 @@ jobs:
   
   release-github:
       uses: ./.github/workflows/release-workflow.yml
-      needs: release
+      needs: dist-tag
       secrets: inherit
       with:
         runs-on: wex-sandbox
-        tag: ${{ needs.release.outputs.tag }}
-        tag_major: ${{ needs.release.outputs.tag_major }}
-        tag_minor: ${{ needs.release.outputs.tag_minor }}
+        tag: ${{ inputs.tag }}
+        tag_major: ${{ inputs.tag_major }}
+        tag_minor: ${{ inputs.tag_minor }}
